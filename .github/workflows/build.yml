@@ -2,46 +2,73 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
     steps:
-      - name: Check out the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev cmake \
-            libffi-dev libssl-dev build-essential
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            autoconf \
+            automake \
+            libtool \
+            libtool-bin \
+            m4 \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            cmake \
+            libffi-dev \
+            libssl-dev \
+            build-essential
 
-      - name: Install buildozer and Cython
+      - name: Install Python packages
         run: |
-          pip install --upgrade pip
-          pip install "Cython<3.0" buildozer
+          python -m pip install --upgrade pip
+          pip install buildozer==1.5.0
+          pip install Cython==0.29.37
 
-      - name: Build the debug APK
+      - name: Build APK
         env:
           P4A_freetype_URL: https://downloads.sourceforge.net/project/freetype/freetype2/2.14.1/freetype-2.14.1.tar.gz
         run: |
-          for i in 1 2 3 4 5; do
-            yes | buildozer android debug && break
-            echo "Attempt $i failed, retrying in 60s..."
-            sleep 60
-          done
+          buildozer android debug
 
-      - name: Upload the APK
+      - name: Show generated files
+        if: always()
+        run: |
+          echo "===== APK Search ====="
+          find . -type f -name "*.apk"
+          echo ""
+          echo "===== AAB Search ====="
+          find . -type f -name "*.aab"
+          echo ""
+          echo "===== BIN Folder ====="
+          ls -R bin || true
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: sales-analytics-apk
-          path: bin/*.apk
+          path: |
+            **/*.apk
+            **/*.aab
