@@ -31,8 +31,14 @@ jobs:
           pip install "Cython<3.0" buildozer
 
       - name: Build the debug APK
+        env:
+          P4A_freetype_URL: https://downloads.sourceforge.net/project/freetype/freetype2/2.14.1/freetype-2.14.1.tar.gz
         run: |
-          yes | buildozer android debug
+          for i in 1 2 3 4 5; do
+            yes | buildozer android debug && break
+            echo "Attempt $i failed, retrying in 60s..."
+            sleep 60
+          done
 
       - name: Upload the APK
         uses: actions/upload-artifact@v4
